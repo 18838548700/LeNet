@@ -54,6 +54,10 @@ def train_val_data_process():
 
 def train_model(model, epochs=50, lr=0.001):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # 记录当前时间
+    now = time.time()
+
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr)
     criterion = nn.CrossEntropyLoss()
@@ -129,8 +133,8 @@ def train_model(model, epochs=50, lr=0.001):
         print("-" * 30)
 
         # 记录每轮的损失和准确率
-        train_lost_list.append(train_total_loss)
-        val_lost_list.append(val_total_loss)
+        train_lost_list.append(round(train_total_loss / train_total_samples, 2))
+        val_lost_list.append(round(val_total_loss / train_total_samples, 2))
         train_acc_list.append(round(train_total_correct.item() / train_total_samples, 2))
         val_acc_list.append(round(val_total_correct.item() / val_total_samples, 2))
 
@@ -154,7 +158,53 @@ def train_model(model, epochs=50, lr=0.001):
     with open("./train_process.csv", "w", encoding="utf-8") as f:
         train_process.to_csv(f, index=False)
 
+    # 记录训练总时间
+    time_use = time.time() - now
+    print("训练和验证耗费的时间: {:.0f}m{:.0f}s".format(time_use//60, time_use%60))
+
+    return train_process
+
+
+def plot_process(train_process):
+    """
+    绘制训练过程中的损失和准确率变化曲线
+    
+    该函数接收训练过程数据，使用matplotlib创建包含两个子图的可视化图表：
+    - 左侧子图显示训练损失随epoch的变化趋势
+    - 右侧子图显示训练准确率随epoch的变化趋势
+    
+    Args:
+        train_process (pd.DataFrame): 包含训练过程数据的DataFrame，必须包含以下列：
+            - epoch: 训练轮次
+            - train_lost: 每轮的训练损失值
+            - train_acc: 每轮的训练准确率值
+    """
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+    # 绘制训练损失曲线
+    ax[0].plot(train_process["epoch"], train_process["train_lost"], "ro-", label="train_lost")
+    ax[0].set_xlabel("epoch")
+    ax[0].set_ylabel("loss")
+    ax[0].set_title("Training Loss")
+    ax[0].legend()
+
+    # 绘制训练准确率曲线
+    ax[1].plot(train_process["epoch"], train_process["train_acc"], "bo-", label="train_acc")
+    ax[1].set_xlabel("epoch")
+    ax[1].set_ylabel("acc")
+    ax[1].set_title("Training Accuracy")
+    ax[1].legend()
+
+    plt.savefig("./train.svg")
+    plt.savefig("./train.png")
+
+    # 自动调整子图间距，防止标签、标题等元素重叠
+    plt.tight_layout()
+    plt.show()
+
 
 if __name__ == '__main__':
     model = LeNet()
-    train_model(model, epochs=100)
+    # train_process = train_model(model, epochs=20)
+    train_process = pd.read_csv("./train_process.csv")
+    plot_process(train_process)

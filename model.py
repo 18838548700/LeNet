@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchsummary import summary
 
 """
-标准的 LeNet-5 结构应该是:
+标准的 LeNet-5 结构应该是: 2层卷积, 3层全连接
 input: 1x28×28 (CHW)
 C1: Conv(1→6, 5×5) + Sigmoid + AvgPool(2×2)   6x14x14
 C2: Conv(6→16, 5×5) + Sigmoid + AvgPool(2×2)  16x5x5
